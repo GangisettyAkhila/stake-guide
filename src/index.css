@@ -1,41 +1,141 @@
 :root {
-  --font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  --bg-color: #121212;
-  --text-color: rgba(255, 255, 255, 0.87);
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-family);
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  min-height: 100vh;
+  --bg-dark: #0f172a;
+  --bg-card: #1e293b;
+  --primary: #3b82f6;
+  --primary-glow: rgba(59, 130, 246, 0.5);
+  --secondary: #64748b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  line-height: 1.6;
+  overflow: hidden;
+  /* App-like feel */
+}
+
+/* Layout */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  position: relative;
+  background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 50%);
+}
+
+.chat-sidebar {
+  width: 450px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  position: relative;
+  box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.chat-sidebar.collapsed {
+  width: 0;
+  overflow: hidden;
+}
+
+.collapse-btn {
+  position: absolute;
+  left: -40px;
+  top: 20px;
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  border: none;
+  color: white;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.chat-wrapper {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Typography & Common */
 h1,
 h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 0;
+h3 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: white;
 }
 
-/* Scrollbar styling */
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Cards & Glassmorphism */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a2e;
+  background: var(--bg-dark);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a2a40;
+  background: var(--secondary);
   border-radius: 4px;
 }

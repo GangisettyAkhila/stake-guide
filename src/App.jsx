@@ -1,26 +1,65 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import Splash from './components/Splash';
-import ChatInterface from './components/ChatInterface';
+import Layout from './components/Layout';
+import Dashboard from './components/Dashboard';
+import PlatformComparison from './components/PlatformComparison';
+import StakingModal from './components/StakingModal';
+import { useAppStore } from './store/useAppStore';
+import { sendStakeTransaction } from './services/algorandService';
 import './App.css';
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const { currentStep, initSession, account, recordStake } = useAppStore();
+
+  useEffect(() => {
+    initSession();
+  }, []);
+
+  const handleStake = async (amount) => {
+    if (!account) return;
+    try {
+      const txId = await sendStakeTransaction(account, amount);
+      await recordStake({
+        txId,
+        amount: parseFloat(amount),
+        walletAddress: account,
+        platform: 'Algorand TestNet'
+      });
+      alert(`Transaction Successful! ID: ${txId}`);
+    } catch (e) {
+      alert("Transaction Failed");
+    }
+  };
+
+  if (currentStep === 'SPLASH') {
+    return <Splash onComplete={() => useAppStore.getState().sendMessage(null, 'next')} />;
+  }
 
   return (
     <>
-      {showSplash ? (
-        <Splash onComplete={() => setShowSplash(false)} />
-      ) : (
-        <div style={{
-          height: '100vh',
-          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          <ChatInterface />
-        </div>
-      )}
+      <Layout>
+        {['ONBOARDING', 'USER_TYPE_SELECTED'].includes(currentStep) && (
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            <h1 className="fade-in" style={{ fontSize: '3rem', marginBottom: '1rem', background: 'linear-gradient(to right, #60a5fa, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Welcome to the Future of Staking
+            </h1>
+            <p className="fade-in" style={{ color: 'var(--text-muted)', maxWidth: '600px', fontSize: '1.2rem' }}>
+              Connect your wallet via the AI Assistant on the right to start your personalized staking journey.
+            </p>
+          </div>
+        )}
+
+        {currentStep === 'DASHBOARD' && <Dashboard />}
+
+        {currentStep === 'RECOMMENDATIONS' && <PlatformComparison />}
+      </Layout>
+
+      <StakingModal
+        isOpen={currentStep === 'STAKING_INPUT'}
+        onClose={() => useAppStore.setState({ currentStep: 'RECOMMENDATIONS' })}
+        onStake={handleStake}
+        account={account}
+      />
     </>
   );
 }
