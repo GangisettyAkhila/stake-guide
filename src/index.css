@@ -59,7 +59,16 @@ body {
 
 .chat-sidebar.collapsed {
   width: 0;
-  overflow: hidden;
+  /* overflow: hidden; -- Removed to allow button to be visible */
+}
+
+/* Hide content when collapsed but keep container visible for button */
+.chat-sidebar.collapsed .chat-wrapper,
+.chat-sidebar.collapsed .chat-control-bar {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.2s;
 }
 
 .collapse-btn {

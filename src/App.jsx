@@ -15,17 +15,19 @@ function App() {
     initSession();
   }, []);
 
-  const handleStake = async (amount) => {
+  const handleStake = async (amount, sender, fee) => {
     if (!account) return;
     try {
-      const txId = await sendStakeTransaction(account, amount);
+      // Use user-provided sender/fee or fallbacks
+      const targetSender = sender || account;
+      const txId = await sendStakeTransaction(targetSender, amount, fee);
       await recordStake({
         txId,
         amount: parseFloat(amount),
         walletAddress: account,
         platform: 'Algorand TestNet'
       });
-      alert(`Transaction Successful! ID: ${txId}`);
+      alert(`Algorand TestNet Transaction Successful! ID: ${txId}`);
     } catch (e) {
       alert("Transaction Failed");
     }

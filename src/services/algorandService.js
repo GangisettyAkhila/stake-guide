@@ -63,12 +63,27 @@ export const analyzeUserBehavior = async (address) => {
     };
 };
 
-export const sendStakeTransaction = async (senderAddress, amountAlgo) => {
+export const sendStakeTransaction = async (senderAddress, amountAlgo, feeAlgo) => {
     try {
+        console.log(`Initiating transaction on Algorand Testnet from ${senderAddress}, Fee: ${feeAlgo || 'default'}...`);
         if (!senderAddress || !amountAlgo) throw new Error("Missing transaction parameters");
 
         const params = await algodClient.getTransactionParams().do();
         const suggestedParams = { ...params };
+
+        // Apply Custom Fee if provided
+        if (feeAlgo) {
+            let feeMicro = algosdk.algosToMicroalgos(parseFloat(feeAlgo));
+
+            // Enforce Minimum Fee (1000 microAlgo)
+            if (isNaN(feeMicro) || feeMicro < 1000) {
+                console.warn("Fee too low or invalid, setting to minimum (1000).");
+                feeMicro = 1000;
+            }
+
+            suggestedParams.flatFee = true;
+            suggestedParams.fee = feeMicro;
+        }
 
         // Ensure amount is valid number
         const amountMicroAlgo = algosdk.algosToMicroalgos(parseFloat(amountAlgo));

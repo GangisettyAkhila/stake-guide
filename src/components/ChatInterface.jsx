@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { connectWallet } from '../services/algorandService';
+import { connectWallet, analyzeUserBehavior } from '../services/algorandService';
 import './ChatInterface.css';
 
 const ChatInterface = () => {
@@ -8,14 +8,15 @@ const ChatInterface = () => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef(null);
 
-    // Initial Greeting - Handled once
+    // Initial Greeting - Handled if empty
     useEffect(() => {
-        const hasStarted = sessionStorage.getItem('has_started_chat');
-        if (messages.length === 0 && !hasStarted) {
+        if (messages.length === 0) {
+            // Check if we are resuming a session or starting new
+            // For simplicity in this demo, we always trigger 'start' if empty
+            // The backend 'start' logic handles ONBOARDING context.
             sendMessage('', 'start');
-            sessionStorage.setItem('has_started_chat', 'true');
         }
-    }, [messages.length]); // Dependency on length safe here as we check 0
+    }, [messages.length]); // Check on mount and if cleared
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,7 +33,8 @@ const ChatInterface = () => {
             try {
                 const acc = await connectWallet(); // Pera Wallet Logic
                 if (acc) {
-                    storeConnect(acc);
+                    const analysis = await analyzeUserBehavior(acc);
+                    storeConnect(acc, analysis);
                     sendMessage(`Wallet connected: ${acc.slice(0, 4)}...${acc.slice(-4)}`);
                 }
             } catch (e) {
@@ -45,15 +47,11 @@ const ChatInterface = () => {
 
     // Helper to render suggestions based on Step
     const renderSuggestions = () => {
-        if (currentStep === 'ONBOARDING' && !userType) {
-            return (
-                <>
-                    <button className="chip" onClick={() => handleAction('select_beginner', 'Beginner')}>Beginner</button>
-                    <button className="chip" onClick={() => handleAction('select_expert', 'Expert')}>Expert</button>
-                </>
-            );
+        if (currentStep === 'ONBOARDING') {
+            return <button className="chip action" onClick={() => handleAction('connect_wallet', 'Connect Wallet')}>Connect Wallet</button>;
         }
         if (currentStep === 'USER_TYPE_SELECTED') {
+            // Fallback if state lingers, but ideally skipped
             return <button className="chip action" onClick={() => handleAction('connect_wallet', 'Connect Wallet')}>Connect Wallet</button>;
         }
         if (currentStep === 'RECOMMENDATIONS') {

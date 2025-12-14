@@ -68,15 +68,15 @@ export const useAppStore = create((set, get) => ({
         }
     },
 
-    connectWallet: async (address) => {
+    connectWallet: async (address, analysis = null) => {
         const { sessionId } = get();
         set({ account: address });
 
-        // Notify backend
+        // Notify backend with profiling data
         const res = await fetch(`${API_URL}/wallet/connect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId, walletAddress: address })
+            body: JSON.stringify({ sessionId, walletAddress: address, analysis })
         });
         const data = await res.json();
         set({ currentStep: data.currentStep });

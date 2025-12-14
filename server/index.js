@@ -82,40 +82,38 @@ app.post('/api/chat', async (req, res) => {
         return res.json({ text: "Session reset. Returning to start.", currentStep: STEPS.ONBOARDING });
     }
 
+    // Global Start/Resume Handler
+    if (action === 'start' && user.currentStep !== STEPS.ONBOARDING) {
+        let resumeMsg = "Welcome back.";
+        if (user.currentStep === STEPS.RECOMMENDATIONS) {
+            resumeMsg = "Welcome back! I have your recommendations ready. Check the buttons below.";
+        } else if (user.currentStep === STEPS.STAKING_INPUT) {
+            resumeMsg = "Resuming staking session. Please complete the transaction in the modal.";
+        }
+        return res.json({ text: resumeMsg, currentStep: user.currentStep, userType: user.userType });
+    }
+
     if (user.currentStep === STEPS.SPLASH) {
         if (action === 'next') {
             nextStep = STEPS.ONBOARDING;
         }
     }
     else if (user.currentStep === STEPS.ONBOARDING) {
-        if (action === 'select_beginner') {
-            nextStep = STEPS.USER_TYPE_SELECTED;
-            user.userType = 'Beginner';
+        // Skip Manual Selection -> Direct to Connect
+        if (action === 'start') {
             aiResponse = `
-                <strong>Welcome, Future Staker! 🎓</strong><br/><br/>
-                Staking is like a savings account for your crypto. You lock up your coins to help secure the network, and in return, you earn rewards (interest).<br/><br/>
-                Our app will help you choose the best safe options. First, we need to connect a <strong>Wallet</strong> (like a digital bank account) where your funds are stored.<br/><br/>
-                Do you have the <strong>Pera Wallet</strong> app ready?
+                <strong>Welcome to StakeGuide! 🚀</strong><br/><br/>
+                We analyze your wallet history to provide personalized staking recommendations.<br/><br/>
+                Please <strong>Connect your Wallet</strong> to get started.
             `;
-        } else if (action === 'select_expert') {
-            nextStep = STEPS.USER_TYPE_SELECTED;
-            user.userType = 'Expert';
-            aiResponse = "<strong>Expert Mode Activated 🚀</strong><br/>Let's get straight to business. Please connect your wallet to analyze your portfolio and view high-yield opportunities.";
+        } else if (action === 'connect_wallet_intent') {
+            aiResponse = "Click the button below to connect.";
         } else {
-            aiResponse = "To get started, please tell me: Are you a **Beginner** (new to crypto) or an **Expert**?";
+            // If unrelated message, just nudge gently
+            aiResponse = "To proceed, please connect your wallet using the button below.";
         }
     }
-    else if (user.currentStep === STEPS.USER_TYPE_SELECTED) {
-        if (action === 'start_connect') {
-            // Just a dialogue step
-            aiResponse = "Please click the Connect button in the chat options.";
-        } else if (action === 'wallet_connected_success') {
-            // This action usually comes from the /wallet/connect endpoint, but here for dialogue sync
-            nextStep = STEPS.RECOMMENDATIONS; // Fast forward for flow
-        } else {
-            aiResponse = "I need you to connect your wallet to proceed. 💼";
-        }
-    }
+    // Removed USER_TYPE_SELECTED as it's no longer a distinct interactive step
     else if (user.currentStep === STEPS.RECOMMENDATIONS) {
         const { highYield, safeBet } = getAnalysis();
 
@@ -157,12 +155,20 @@ app.post('/api/chat', async (req, res) => {
 
 // 3. Wallet Connection
 app.post('/api/wallet/connect', async (req, res) => {
-    const { sessionId, walletAddress } = req.body;
+    const { sessionId, walletAddress, analysis } = req.body; // Accept analysis
     const user = await User.findOne({ sessionId });
 
     if (!user) return res.status(404).json({ error: 'Session not found' });
 
     user.walletAddress = walletAddress;
+
+    // Automated Profiling Logic
+    if (analysis) {
+        user.userType = analysis.isExpert ? 'Expert' : 'Beginner';
+    } else {
+        user.userType = 'Beginner'; // Default
+    }
+
     user.currentStep = STEPS.RECOMMENDATIONS; // Transition
     await user.save();
 
